@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import data from "./GeoChart.world.geo.json";
 import * as d3 from "d3";
 import styled from "styled-components";
 
@@ -62,7 +63,8 @@ const ChoroplethMap = () => {
 
   useEffect(() => {
     const svg = d3.select(ChoroplethMapRef.current);
-    if (!dimensions) return;
+    const { width, height } =
+      dimensions || wrapperRef.current.getBoundingClientRect();
   }, [data, dimensions]);
 
   useEffect(() => {
