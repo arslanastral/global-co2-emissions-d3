@@ -1,13 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
-import data from "./GeoChart.world.geo.json";
+import mapData from "./GeoChart.world.geo.json";
 import * as d3 from "d3";
 import styled from "styled-components";
 
 const Wrapper = styled.div`
-  background: white;
-  width: clamp(320px, 90vw, 1000px);
+  /* background: white; */
+  width: clamp(320px, 90vw, 1200px);
   box-shadow: 0 2px 25px rgba(255, 0, 130, 0.5);
-  height: 850px;
+  height: 900px;
   border-radius: 20px;
   display: flex;
   justify-content: center;
@@ -32,23 +32,23 @@ const Subtitle = styled.p`
   animation-duration: 1s;
   font-family: Inter;
   text-align: center;
-  margin: 2rem 2rem 3rem 2rem;
+  /* margin: 2rem 2rem 3rem 2rem; */
   font-size: clamp(1rem, 4vw, 1.5rem)
   letter-spacing: -1px;
 `;
 
 const ChoroplethMapContainer = styled.div`
   border-radius: 10px;
-  width: clamp(200px, 60vw, 800px);
-  height: 400px;
+  width: clamp(310px, 80vw, 1100px);
+  height: 800px;
   margin-top: 1rem;
 `;
 
 const ChoroplethMapSvg = styled.svg`
   width: 100%;
   height: 100%;
-  margin-left: 3rem;
-  margin-right: 1rem;
+  /* margin-left: 3rem; */
+  /* margin-right: 1rem; */
   animation: fadeIn;
   animation-duration: 1s;
   overflow: visible !important;
@@ -65,8 +65,16 @@ const ChoroplethMap = () => {
     const svg = d3.select(ChoroplethMapRef.current);
     const { width, height } =
       dimensions || wrapperRef.current.getBoundingClientRect();
-    const mapProjection = d3.geoMercator();
+    const mapProjection = d3.geoMercator().fitSize([width, height], mapData);
     const mapPathGenerator = d3.geoPath().projection(mapProjection);
+
+    svg
+      .selectAll(".country")
+      .data(mapData.features)
+      .join("path")
+      .attr("class", "country")
+      .attr("d", (feature) => mapPathGenerator(feature))
+      .attr("fill", "white");
   }, [data, dimensions]);
 
   useEffect(() => {
@@ -83,10 +91,7 @@ const ChoroplethMap = () => {
       <Subtitle></Subtitle>
 
       <ChoroplethMapContainer ref={wrapperRef}>
-        <ChoroplethMapSvg ref={ChoroplethMapRef}>
-          <g className="x-axis" />
-          <g className="y-axis" />
-        </ChoroplethMapSvg>
+        <ChoroplethMapSvg ref={ChoroplethMapRef}></ChoroplethMapSvg>
       </ChoroplethMapContainer>
     </Wrapper>
   );
