@@ -65,6 +65,8 @@ const ChoroplethMap = () => {
     const svg = d3.select(ChoroplethMapRef.current);
     const { width, height } =
       dimensions || wrapperRef.current.getBoundingClientRect();
+    const mapProjection = d3.geoMercator();
+    const mapPathGenerator = d3.geoPath().projection(mapProjection);
   }, [data, dimensions]);
 
   useEffect(() => {
