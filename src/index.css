@@ -1,1 +1,16 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Playfair+Display:wght@700;800&display=swap");
+
+div.tooltip {
+  position: absolute;
+  text-align: left;
+  font-family: Inter;
+  line-height: 22px;
+  font-size: 1.1rem;
+  padding: 0.3rem 0.6rem;
+  background: white;
+  box-shadow: 0 2px 25px rgba(255, 0, 130, 0.5);
+  color: black;
+  border: 1px solid black;
+  border-radius: 8px;
+  pointer-events: none;
+}
