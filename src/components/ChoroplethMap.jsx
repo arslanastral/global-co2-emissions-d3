@@ -3,12 +3,13 @@ import mapData from "./GeoChart.world.geo.json";
 import * as d3 from "d3";
 import styled from "styled-components";
 import Slider from "react-input-slider";
+import { autoType } from "d3";
 
 const Wrapper = styled.div`
   /* background: white; */
-  width: clamp(320px, 90vw, 1100px);
+  width: clamp(320px, 90vw, 1200px);
   box-shadow: 0 2px 25px rgba(255, 0, 130, 0.5);
-  height: 700px;
+  height: 900px;
   border-radius: 20px;
   display: flex;
   justify-content: center;
@@ -62,15 +63,23 @@ const ChoroplethMap = () => {
   const wrapperRef = useRef();
   const dimensions = useResizeObserver(wrapperRef);
   const dataURL =
-    "https://gist.githubusercontent.com/arslanastral/124e7f33c35c465d813e206f94c4a4c0/raw/9b1f4f1add2b8573e79a4e3d6a7275801e92a87b/co2-emissions.csv";
+    "https://gist.githubusercontent.com/arslanastral/124e7f33c35c465d813e206f94c4a4c0/raw/9bb27d2c5f820f692888237ade11084465974e59/co2-emissions.csv";
 
   useEffect(() => {
-    console.log(data[year]);
     const svg = d3.select(ChoroplethMapRef.current);
     const { width, height } =
       dimensions || wrapperRef.current.getBoundingClientRect();
     const mapProjection = d3.geoMercator().fitSize([width, height], mapData);
     const mapPathGenerator = d3.geoPath().projection(mapProjection);
+
+    let newArr = Object.values(data);
+    newArr.shift();
+    const minProp = d3.min(newArr);
+    const maxProp = d3.max(newArr);
+    const colorScale = d3
+      .scaleLinear()
+      .domain([minProp, maxProp])
+      .range(["#ccc", "red"]);
 
     svg
       .selectAll(".country")
@@ -78,19 +87,20 @@ const ChoroplethMap = () => {
       .join("path")
       .attr("class", "country")
       .attr("d", (feature) => mapPathGenerator(feature))
-      .attr("fill", "white")
-      .attr("stroke", "black");
+      .attr("fill", (feature) => colorScale(data[feature.properties.name]))
+      .attr("stroke", "black")
+      .attr("stroke-width", "0.4");
   }, [data, dimensions, year]);
 
   useEffect(() => {
-    d3.csv(dataURL).then((data) => setdata(data));
-  }, []);
+    d3.csv(dataURL, autoType).then((data) => setdata(data[year]));
+  }, [year]);
 
   if (!data) {
     return <div>Loading...</div>;
   }
 
-  const yearMap = data.map((ele) => ele.Year);
+  const yearMap = d3.range(1960, 2021);
 
   return (
     <Wrapper>
