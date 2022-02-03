@@ -2,16 +2,17 @@ import React, { useEffect, useRef, useState } from "react";
 import mapData from "./GeoChart.world.geo.json";
 import * as d3 from "d3";
 import styled from "styled-components";
+import Slider from "react-input-slider";
 
 const Wrapper = styled.div`
   /* background: white; */
-  width: clamp(320px, 90vw, 1200px);
+  width: clamp(320px, 90vw, 1100px);
   box-shadow: 0 2px 25px rgba(255, 0, 130, 0.5);
-  height: 900px;
+  height: 700px;
   border-radius: 20px;
   display: flex;
   justify-content: center;
-  flex-wrap: wrap;
+  /* flex-wrap: wrap; */
   flex-direction: column;
   align-items: center;
 `;
@@ -56,7 +57,7 @@ const ChoroplethMapSvg = styled.svg`
 
 const ChoroplethMap = () => {
   const [data, setdata] = useState([]);
-  // const [year, setyear] = useState();
+  const [year, setYear] = useState(60);
   const ChoroplethMapRef = useRef();
   const wrapperRef = useRef();
   const dimensions = useResizeObserver(wrapperRef);
@@ -64,8 +65,7 @@ const ChoroplethMap = () => {
     "https://gist.githubusercontent.com/arslanastral/124e7f33c35c465d813e206f94c4a4c0/raw/9b1f4f1add2b8573e79a4e3d6a7275801e92a87b/co2-emissions.csv";
 
   useEffect(() => {
-    console.log(data);
-
+    console.log(data[year]);
     const svg = d3.select(ChoroplethMapRef.current);
     const { width, height } =
       dimensions || wrapperRef.current.getBoundingClientRect();
@@ -80,7 +80,7 @@ const ChoroplethMap = () => {
       .attr("d", (feature) => mapPathGenerator(feature))
       .attr("fill", "white")
       .attr("stroke", "black");
-  }, [data, dimensions]);
+  }, [data, dimensions, year]);
 
   useEffect(() => {
     d3.csv(dataURL).then((data) => setdata(data));
@@ -90,6 +90,8 @@ const ChoroplethMap = () => {
     return <div>Loading...</div>;
   }
 
+  const yearMap = data.map((ele) => ele.Year);
+
   return (
     <Wrapper>
       <Title></Title>
@@ -98,6 +100,8 @@ const ChoroplethMap = () => {
       <ChoroplethMapContainer ref={wrapperRef}>
         <ChoroplethMapSvg ref={ChoroplethMapRef}></ChoroplethMapSvg>
       </ChoroplethMapContainer>
+      <Slider xmin={0} xmax={60} x={year} onChange={({ x }) => setYear(x)} />
+      <span>{yearMap[year]}</span>
     </Wrapper>
   );
 };
