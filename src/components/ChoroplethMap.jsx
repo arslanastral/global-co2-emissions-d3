@@ -8,7 +8,7 @@ import { autoType } from "d3";
 const Wrapper = styled.div`
   /* background: white; */
   width: clamp(320px, 90vw, 1200px);
-  box-shadow: 0 2px 25px rgba(255, 0, 130, 0.5);
+  /* box-shadow: 0 2px 25px rgba(255, 0, 130, 0.5); */
   height: 900px;
   border-radius: 20px;
   display: flex;
@@ -62,8 +62,9 @@ const ChoroplethMap = () => {
   const ChoroplethMapRef = useRef();
   const wrapperRef = useRef();
   const dimensions = useResizeObserver(wrapperRef);
+  const yearMap = d3.range(1960, 2021);
   const dataURL =
-    "https://gist.githubusercontent.com/arslanastral/124e7f33c35c465d813e206f94c4a4c0/raw/9bb27d2c5f820f692888237ade11084465974e59/co2-emissions.csv";
+    "https://gist.githubusercontent.com/arslanastral/124e7f33c35c465d813e206f94c4a4c0/raw/8f84d1c7ed888a842bc05d0614cec465ea28e5a1/co2-emissions.csv";
 
   useEffect(() => {
     const svg = d3.select(ChoroplethMapRef.current);
@@ -77,9 +78,17 @@ const ChoroplethMap = () => {
     const minProp = d3.min(newArr);
     const maxProp = d3.max(newArr);
     const colorScale = d3
-      .scaleLinear()
+      .scaleSequential()
       .domain([minProp, maxProp])
-      .range(["#ccc", "red"]);
+      .interpolator(d3.interpolateReds);
+
+    let div = d3
+      .select("body")
+      .append("div")
+      .attr("class", "tooltip")
+      .style("opacity", 0)
+      .style("left", "0px")
+      .style("top", "0px");
 
     svg
       .selectAll(".country")
@@ -87,10 +96,42 @@ const ChoroplethMap = () => {
       .join("path")
       .attr("class", "country")
       .attr("d", (feature) => mapPathGenerator(feature))
-      .attr("fill", (feature) => colorScale(data[feature.properties.name]))
       .attr("stroke", "black")
-      .attr("stroke-width", "0.4");
-  }, [data, dimensions, year]);
+      .attr("fill", (feature) =>
+        data[feature.properties.name]
+          ? colorScale(data[feature.properties.name])
+          : "#bdacac"
+      )
+      .attr("stroke", "black")
+      .attr("stroke-width", "0.4")
+      .on("mouseover", function (event, feature) {
+        d3.select(this).style("stroke", "blue").attr("stroke-width", "1");
+        div.transition().duration(200).style("opacity", 1);
+        div
+          .html(
+            `<span style="font-weight:600;font-size:1rem">${
+              data[feature.properties.name]
+                ? d3.format(".1f")(data[feature.properties.name]) +
+                  " MtCO<sub>2</sub></span>"
+                : "Data Not Available"
+            }` +
+              " " +
+              `<span style="font-size:0.9rem">(${yearMap[year]})</span>` +
+              "<br/>" +
+              `<span style="font-size:0.95rem">Country: ${feature.properties.name}</span>`
+          )
+          .style("left", event.pageX + "px")
+          .style("top", event.pageY + "px");
+      })
+      .on("mouseout", function () {
+        d3.select(this).style("stroke", "black").attr("stroke-width", "0.4");
+        div.transition().duration(500).style("opacity", 0);
+      });
+
+    return () => {
+      div.remove();
+    };
+  }, [data, dimensions, year, yearMap]);
 
   useEffect(() => {
     d3.csv(dataURL, autoType).then((data) => setdata(data[year]));
@@ -100,11 +141,11 @@ const ChoroplethMap = () => {
     return <div>Loading...</div>;
   }
 
-  const yearMap = d3.range(1960, 2021);
-
   return (
     <Wrapper>
-      <Title></Title>
+      <Title>
+        CO<sub>2</sub> Emissions in MtCO2
+      </Title>
       <Subtitle></Subtitle>
 
       <ChoroplethMapContainer ref={wrapperRef}>
