@@ -56,12 +56,16 @@ const ChoroplethMapSvg = styled.svg`
 
 const ChoroplethMap = () => {
   const [data, setdata] = useState([]);
+  // const [year, setyear] = useState();
   const ChoroplethMapRef = useRef();
   const wrapperRef = useRef();
   const dimensions = useResizeObserver(wrapperRef);
-  const dataURL = "";
+  const dataURL =
+    "https://gist.githubusercontent.com/arslanastral/124e7f33c35c465d813e206f94c4a4c0/raw/9b1f4f1add2b8573e79a4e3d6a7275801e92a87b/co2-emissions.csv";
 
   useEffect(() => {
+    console.log(data);
+
     const svg = d3.select(ChoroplethMapRef.current);
     const { width, height } =
       dimensions || wrapperRef.current.getBoundingClientRect();
@@ -74,11 +78,12 @@ const ChoroplethMap = () => {
       .join("path")
       .attr("class", "country")
       .attr("d", (feature) => mapPathGenerator(feature))
-      .attr("fill", "white");
+      .attr("fill", "white")
+      .attr("stroke", "black");
   }, [data, dimensions]);
 
   useEffect(() => {
-    d3.json(dataURL).then((data) => setdata(data));
+    d3.csv(dataURL).then((data) => setdata(data));
   }, []);
 
   if (!data) {
