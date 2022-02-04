@@ -15,7 +15,8 @@
     "react-dom": "^17.0.2",
     "react-input-slider": "^6.0.1",
     "sanitize.css": "^13.0.0",
-    "styled-components": "^5.3.3"
+    "styled-components": "^5.3.3",
+    "topojson-client": "^3.1.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^1.0.7",

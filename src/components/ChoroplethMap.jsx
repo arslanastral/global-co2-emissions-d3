@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import mapData from "./GeoChart.world.geo.json";
+import { feature } from "topojson-client";
+import world from "./countries-110m.json";
 import * as d3 from "d3";
 import styled from "styled-components";
 import Slider from "react-input-slider";
@@ -63,13 +64,17 @@ const ChoroplethMap = () => {
   const dimensions = useResizeObserver(wrapperRef);
   const yearMap = d3.range(1960, 2021);
   const dataURL =
-    "https://gist.githubusercontent.com/arslanastral/124e7f33c35c465d813e206f94c4a4c0/raw/8f84d1c7ed888a842bc05d0614cec465ea28e5a1/co2-emissions.csv";
+    "https://gist.githubusercontent.com/arslanastral/124e7f33c35c465d813e206f94c4a4c0/raw/748955149d56d4b7bef1d876da6f3280b2b6c798/co2-emissions.csv";
 
+  // console.log(world.objects.countries.geometries[0].properties.name);
+
+  // console.log(world.objects.countries.geometries);
   useEffect(() => {
     const svg = d3.select(ChoroplethMapRef.current);
     const { width, height } =
       dimensions || wrapperRef.current.getBoundingClientRect();
-    const mapProjection = d3.geoMercator().fitSize([width, height], mapData);
+    const countries = feature(world, world.objects.countries);
+    const mapProjection = d3.geoMercator().fitSize([width, height], countries);
     // const projection = d3.geoMercator();
     const mapPathGenerator = d3.geoPath().projection(mapProjection);
 
@@ -78,6 +83,7 @@ const ChoroplethMap = () => {
     const minProp = d3.min(newArr);
     const maxProp = d3.max(newArr);
 
+    console.log(data["W. Sahara"]);
     let sqrtScale = d3.scaleSqrt().domain([minProp, maxProp]).range([1, 50]);
 
     const colorScale = d3
@@ -95,30 +101,10 @@ const ChoroplethMap = () => {
 
     svg
       .selectAll(".country")
-      .data(mapData.features)
+      .data(countries.features)
       .join("path")
       .attr("class", "country")
       .attr("d", (feature) => mapPathGenerator(feature))
-      .transition()
-      .attr("fill", (feature) =>
-        data[feature.properties.name]
-          ? colorScale(data[feature.properties.name])
-          : "#bdacac"
-      )
-      .attr("stroke", "grey")
-      .attr("stroke-width", "0.4");
-
-    svg
-      .selectAll(".dot")
-      .data(mapData.features)
-      .join("circle")
-      .attr("class", "dot")
-      .attr("opacity", 0.8)
-      .attr("fill", "grey")
-      .attr("stroke", "black")
-      .attr("stroke-width", "0.8")
-      .attr("cx", (d) => mapProjection(d3.geoCentroid(d))[0])
-      .attr("cy", (d) => mapProjection(d3.geoCentroid(d))[1])
       .on("mouseover", function (event, feature) {
         d3.select(this).style("stroke", "blue").attr("stroke-width", "1");
         div.transition().duration(200).style("opacity", 1);
@@ -143,7 +129,27 @@ const ChoroplethMap = () => {
         div.transition().duration(500).style("opacity", 0);
       })
       .transition()
-      .attr("r", (feature) => sqrtScale(data[feature.properties.name]));
+      .attr("r", (feature) => sqrtScale(data[feature.properties.name]))
+      .transition()
+      .attr("fill", (feature) =>
+        data[feature.properties.name]
+          ? colorScale(data[feature.properties.name])
+          : "#bdacac"
+      )
+      .attr("stroke", "grey")
+      .attr("stroke-width", "0.4");
+
+    svg
+      .selectAll(".dot")
+      .data(countries.features)
+      .join("circle")
+      .attr("class", "dot")
+      .attr("opacity", 0.8)
+      .attr("fill", "grey")
+      .attr("stroke", "black")
+      .attr("stroke-width", "0.8")
+      .attr("cx", (d) => mapProjection(d3.geoCentroid(d))[0])
+      .attr("cy", (d) => mapProjection(d3.geoCentroid(d))[1]);
 
     return () => {
       div.remove();
