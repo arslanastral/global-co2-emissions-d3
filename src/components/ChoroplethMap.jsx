@@ -66,24 +66,20 @@ const ChoroplethMap = () => {
   const dataURL =
     "https://gist.githubusercontent.com/arslanastral/124e7f33c35c465d813e206f94c4a4c0/raw/748955149d56d4b7bef1d876da6f3280b2b6c798/co2-emissions.csv";
 
-  // console.log(world.objects.countries.geometries[0].properties.name);
-
-  // console.log(world.objects.countries.geometries);
   useEffect(() => {
     const svg = d3.select(ChoroplethMapRef.current);
     const { width, height } =
       dimensions || wrapperRef.current.getBoundingClientRect();
     const countries = feature(world, world.objects.countries);
     const mapProjection = d3.geoMercator().fitSize([width, height], countries);
-    // const projection = d3.geoMercator();
     const mapPathGenerator = d3.geoPath().projection(mapProjection);
 
+    console.log(countries);
     let newArr = Object.values(data);
     newArr.shift();
     const minProp = d3.min(newArr);
     const maxProp = d3.max(newArr);
 
-    console.log(data["W. Sahara"]);
     let sqrtScale = d3.scaleSqrt().domain([minProp, maxProp]).range([1, 50]);
 
     const colorScale = d3
