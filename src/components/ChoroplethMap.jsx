@@ -3,7 +3,6 @@ import mapData from "./GeoChart.world.geo.json";
 import * as d3 from "d3";
 import styled from "styled-components";
 import Slider from "react-input-slider";
-import { autoType } from "d3";
 
 const Wrapper = styled.div`
   /* background: white; */
@@ -71,12 +70,16 @@ const ChoroplethMap = () => {
     const { width, height } =
       dimensions || wrapperRef.current.getBoundingClientRect();
     const mapProjection = d3.geoMercator().fitSize([width, height], mapData);
+    // const projection = d3.geoMercator();
     const mapPathGenerator = d3.geoPath().projection(mapProjection);
 
     let newArr = Object.values(data);
     newArr.shift();
     const minProp = d3.min(newArr);
     const maxProp = d3.max(newArr);
+
+    let sqrtScale = d3.scaleSqrt().domain([minProp, maxProp]).range([1, 50]);
+
     const colorScale = d3
       .scaleSequential()
       .domain([minProp, maxProp])
@@ -96,14 +99,26 @@ const ChoroplethMap = () => {
       .join("path")
       .attr("class", "country")
       .attr("d", (feature) => mapPathGenerator(feature))
-      .attr("stroke", "black")
+      .transition()
       .attr("fill", (feature) =>
         data[feature.properties.name]
           ? colorScale(data[feature.properties.name])
           : "#bdacac"
       )
+      .attr("stroke", "grey")
+      .attr("stroke-width", "0.4");
+
+    svg
+      .selectAll(".dot")
+      .data(mapData.features)
+      .join("circle")
+      .attr("class", "dot")
+      .attr("opacity", 0.8)
+      .attr("fill", "grey")
       .attr("stroke", "black")
-      .attr("stroke-width", "0.4")
+      .attr("stroke-width", "0.8")
+      .attr("cx", (d) => mapProjection(d3.geoCentroid(d))[0])
+      .attr("cy", (d) => mapProjection(d3.geoCentroid(d))[1])
       .on("mouseover", function (event, feature) {
         d3.select(this).style("stroke", "blue").attr("stroke-width", "1");
         div.transition().duration(200).style("opacity", 1);
@@ -126,7 +141,9 @@ const ChoroplethMap = () => {
       .on("mouseout", function () {
         d3.select(this).style("stroke", "black").attr("stroke-width", "0.4");
         div.transition().duration(500).style("opacity", 0);
-      });
+      })
+      .transition()
+      .attr("r", (feature) => sqrtScale(data[feature.properties.name]));
 
     return () => {
       div.remove();
@@ -134,7 +151,7 @@ const ChoroplethMap = () => {
   }, [data, dimensions, year, yearMap]);
 
   useEffect(() => {
-    d3.csv(dataURL, autoType).then((data) => setdata(data[year]));
+    d3.csv(dataURL, d3.autoType).then((data) => setdata(data[year]));
   }, [year]);
 
   if (!data) {
@@ -144,14 +161,20 @@ const ChoroplethMap = () => {
   return (
     <Wrapper>
       <Title>
-        CO<sub>2</sub> Emissions in MtCO2
+        Land CO<sub>2</sub> Emissions in MtCO<sub>2</sub>
       </Title>
       <Subtitle></Subtitle>
 
       <ChoroplethMapContainer ref={wrapperRef}>
         <ChoroplethMapSvg ref={ChoroplethMapRef}></ChoroplethMapSvg>
       </ChoroplethMapContainer>
-      <Slider xmin={0} xmax={60} x={year} onChange={({ x }) => setYear(x)} />
+      <Slider
+        style={{ width: "500px", height: "3px" }}
+        xmin={0}
+        xmax={60}
+        x={year}
+        onChange={({ x }) => setYear(x)}
+      />
       <span>{yearMap[year]}</span>
     </Wrapper>
   );
