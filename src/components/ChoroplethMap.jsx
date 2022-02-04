@@ -19,11 +19,11 @@ const Wrapper = styled.div`
 `;
 
 const Title = styled.h1`
-  color: #2fdb39;
+  color: black;
   animation: fadeInDown;
   animation-duration: 1s;
   font-family: "Playfair Display", serif;
-  margin: -2rem 2rem 0 2rem;
+  margin: 1rem 2rem 0 2rem;
   line-height: 45px;
   font-size: clamp(2rem, 4vw, 2.8rem);
 `;
@@ -49,20 +49,29 @@ const ChoroplethMapContainer = styled.div`
 const ChoroplethMapSvg = styled.svg`
   width: 100%;
   height: 100%;
-  /* margin-left: 3rem; */
-  /* margin-right: 1rem; */
   animation: fadeIn;
   animation-duration: 1s;
   overflow: visible !important;
 `;
 
+const YearTitle = styled.span`
+  color: #080808;
+  animation: fadeIn;
+  animation-duration: 1s;
+  font-family: Inter;
+  text-align: center;
+  /* margin: 2rem 2rem 3rem 2rem; */
+  /* font-size: clamp(1rem, 4vw, 1.5rem) */
+  font-size: 2rem;
+  letter-spacing: -1px;
+`;
+
 const ChoroplethMap = () => {
   const [data, setdata] = useState([]);
-  const [year, setYear] = useState(60);
+  const [selectedYear, setelectedYear] = useState(2020);
   const ChoroplethMapRef = useRef();
   const wrapperRef = useRef();
   const dimensions = useResizeObserver(wrapperRef);
-  const yearMap = d3.range(1960, 2021);
   const dataURL =
     "https://gist.githubusercontent.com/arslanastral/124e7f33c35c465d813e206f94c4a4c0/raw/748955149d56d4b7bef1d876da6f3280b2b6c798/co2-emissions.csv";
 
@@ -70,22 +79,84 @@ const ChoroplethMap = () => {
     const svg = d3.select(ChoroplethMapRef.current);
     const { width, height } =
       dimensions || wrapperRef.current.getBoundingClientRect();
+
     const countries = feature(world, world.objects.countries);
     const mapProjection = d3.geoMercator().fitSize([width, height], countries);
     const mapPathGenerator = d3.geoPath().projection(mapProjection);
 
-    console.log(countries);
-    let newArr = Object.values(data);
-    newArr.shift();
-    const minProp = d3.min(newArr);
-    const maxProp = d3.max(newArr);
+    if (data.length) {
+      let dataset = data.filter((data) => data.Year === selectedYear)[0];
+      let datasetValues = Object.values(dataset);
+      datasetValues.shift(); // removes the year
 
-    let sqrtScale = d3.scaleSqrt().domain([minProp, maxProp]).range([1, 50]);
+      const minProp = d3.min(datasetValues);
+      const maxProp = d3.max(datasetValues);
 
-    const colorScale = d3
-      .scaleSequential()
-      .domain([minProp, maxProp])
-      .interpolator(d3.interpolateReds);
+      let sqrtScale = d3
+        .scaleSqrt()
+        .domain([minProp, maxProp])
+        .range([1, dimensions.width / 19]);
+
+      const colorScale = d3
+        .scaleSequential()
+        .domain([minProp, maxProp])
+        .interpolator(d3.interpolateOrRd);
+
+      svg
+        .selectAll(".country")
+        .data(countries.features)
+        .join("path")
+        .attr("class", "country")
+        .attr("d", (feature) => mapPathGenerator(feature))
+        .on("mouseover", function (event, feature) {
+          let countryName = feature.properties.name;
+          d3.select(this).style("stroke", "blue").attr("stroke-width", "1");
+          div.transition().duration(200).style("opacity", 1);
+          div
+            .html(
+              `<span style="font-weight:600;font-size:1rem">${
+                dataset[countryName]
+                  ? d3.format(".1f")(dataset[countryName]) +
+                    " MtCO<sub>2</sub></span>"
+                  : "Data Not Available"
+              }` +
+                " " +
+                "<br/>" +
+                `<span style="font-size:0.95rem">Year: ${selectedYear}</span>` +
+                "<br/>" +
+                `<span style="font-size:0.95rem">Country: ${countryName}</span>`
+            )
+            .style("left", event.pageX + "px")
+            .style("top", event.pageY + "px");
+        })
+        .on("mouseout", function () {
+          d3.select(this).style("stroke", "grey").attr("stroke-width", "0.4");
+          div.transition().duration(500).style("opacity", 0);
+        })
+        .transition()
+        .attr("fill", (feature) =>
+          dataset[feature.properties.name]
+            ? colorScale(dataset[feature.properties.name])
+            : "#bdacac"
+        )
+        .attr("stroke", "grey")
+        .attr("stroke-width", "0.4");
+
+      svg
+        .selectAll(".dot")
+        .data(countries.features)
+        .join("circle")
+        .attr("class", "dot")
+        .attr("opacity", 0.8)
+        .attr("fill", "grey")
+        .attr("stroke", "black")
+        .attr("stroke-width", "0.8")
+
+        .attr("cx", (d) => mapProjection(d3.geoCentroid(d))[0])
+        .attr("cy", (d) => mapProjection(d3.geoCentroid(d))[1])
+        .transition()
+        .attr("r", (feature) => sqrtScale(dataset[feature.properties.name]));
+    }
 
     let div = d3
       .select("body")
@@ -95,66 +166,14 @@ const ChoroplethMap = () => {
       .style("left", "0px")
       .style("top", "0px");
 
-    svg
-      .selectAll(".country")
-      .data(countries.features)
-      .join("path")
-      .attr("class", "country")
-      .attr("d", (feature) => mapPathGenerator(feature))
-      .on("mouseover", function (event, feature) {
-        d3.select(this).style("stroke", "blue").attr("stroke-width", "1");
-        div.transition().duration(200).style("opacity", 1);
-        div
-          .html(
-            `<span style="font-weight:600;font-size:1rem">${
-              data[feature.properties.name]
-                ? d3.format(".1f")(data[feature.properties.name]) +
-                  " MtCO<sub>2</sub></span>"
-                : "Data Not Available"
-            }` +
-              " " +
-              `<span style="font-size:0.9rem">(${yearMap[year]})</span>` +
-              "<br/>" +
-              `<span style="font-size:0.95rem">Country: ${feature.properties.name}</span>`
-          )
-          .style("left", event.pageX + "px")
-          .style("top", event.pageY + "px");
-      })
-      .on("mouseout", function () {
-        d3.select(this).style("stroke", "black").attr("stroke-width", "0.4");
-        div.transition().duration(500).style("opacity", 0);
-      })
-      .transition()
-      .attr("r", (feature) => sqrtScale(data[feature.properties.name]))
-      .transition()
-      .attr("fill", (feature) =>
-        data[feature.properties.name]
-          ? colorScale(data[feature.properties.name])
-          : "#bdacac"
-      )
-      .attr("stroke", "grey")
-      .attr("stroke-width", "0.4");
-
-    svg
-      .selectAll(".dot")
-      .data(countries.features)
-      .join("circle")
-      .attr("class", "dot")
-      .attr("opacity", 0.8)
-      .attr("fill", "grey")
-      .attr("stroke", "black")
-      .attr("stroke-width", "0.8")
-      .attr("cx", (d) => mapProjection(d3.geoCentroid(d))[0])
-      .attr("cy", (d) => mapProjection(d3.geoCentroid(d))[1]);
-
     return () => {
       div.remove();
     };
-  }, [data, dimensions, year, yearMap]);
+  }, [data, dimensions, selectedYear]);
 
   useEffect(() => {
-    d3.csv(dataURL, d3.autoType).then((data) => setdata(data[year]));
-  }, [year]);
+    d3.csv(dataURL, d3.autoType).then((data) => setdata(data));
+  }, []);
 
   if (!data) {
     return <div>Loading...</div>;
@@ -171,13 +190,13 @@ const ChoroplethMap = () => {
         <ChoroplethMapSvg ref={ChoroplethMapRef}></ChoroplethMapSvg>
       </ChoroplethMapContainer>
       <Slider
-        style={{ width: "500px", height: "3px" }}
-        xmin={0}
-        xmax={60}
-        x={year}
-        onChange={({ x }) => setYear(x)}
+        style={{ width: "50%", height: "3px", margin: "2rem 0 1rem 0" }}
+        xmin={1960}
+        xmax={2020}
+        x={selectedYear}
+        onChange={({ x }) => setelectedYear(x)}
       />
-      <span>{yearMap[year]}</span>
+      <YearTitle>{selectedYear}</YearTitle>
     </Wrapper>
   );
 };
