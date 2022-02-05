@@ -153,7 +153,8 @@ const ChoroplethMap = () => {
         .attr("class", "country")
         .on("mouseover", function (event, feature) {
           let countryName = feature.properties.name;
-          div.transition().duration(200).style("opacity", 1);
+          d3.select(this).style("stroke", "blue");
+          div.transition().duration(200).style("display", "block");
           div
             .html(
               `<span style="font-weight:600;font-size:1rem">${
@@ -172,7 +173,8 @@ const ChoroplethMap = () => {
             .style("top", event.pageY + "px");
         })
         .on("mouseout", function () {
-          div.transition().duration(500).style("opacity", 0);
+          div.transition().duration(500).style("display", "none");
+          d3.select(this).style("stroke", "#c5c5c5");
         })
         .attr("fill", (feature) =>
           dataset[feature.properties.name]
@@ -192,7 +194,8 @@ const ChoroplethMap = () => {
         .attr("stroke", "#333")
         .on("mouseover", function (event, feature) {
           let countryName = feature.properties.name;
-          div.transition().duration(200).style("opacity", 1);
+          d3.select(this).style("stroke", "blue");
+          div.transition().duration(200).style("display", "block");
           div
             .html(
               `<span style="font-weight:600;font-size:1rem">${
@@ -211,7 +214,8 @@ const ChoroplethMap = () => {
             .style("top", event.pageY + "px");
         })
         .on("mouseout", function () {
-          div.transition().duration(500).style("opacity", 0);
+          d3.select(this).style("stroke", "#333");
+          div.transition().duration(500).style("display", "none");
         })
         .attr("cy", (d) => mapProjection(d3.geoCentroid(d))[1])
         .attr("cx", (d) => mapProjection(d3.geoCentroid(d))[0])
@@ -223,7 +227,7 @@ const ChoroplethMap = () => {
       .select("body")
       .append("div")
       .attr("class", "tooltip")
-      .style("opacity", 0)
+      .style("display", "none")
       .style("left", "0px")
       .style("top", "0px");
 
@@ -233,25 +237,12 @@ const ChoroplethMap = () => {
         .selectAll(".country")
         .attr("transform", transform)
         .attr("stroke", "#c5c5c5")
-        .attr("stroke-width", 0.4 / transform.k)
-        .on("mouseover", function () {
-          d3.select(this).style("stroke", "blue");
-          console.log(transform);
-        })
-        .on("mouseout", function () {
-          d3.select(this).style("stroke", "#c5c5c5");
-        });
+        .attr("stroke-width", 0.8 / transform.k);
       svg
         .selectAll(".dot")
         .attr("transform", transform)
         .attr("stroke", "#333")
-        .attr("stroke-width", 0.8 / transform.k)
-        .on("mouseover", function () {
-          d3.select(this).style("stroke", "blue");
-        })
-        .on("mouseout", function () {
-          d3.select(this).style("stroke", "#333");
-        });
+        .attr("stroke-width", 1 / transform.k);
     }
 
     const zoom = d3.zoom().scaleExtent([1, 10]).on("zoom", zoomed);
