@@ -80,6 +80,7 @@ const ChoroplethMap = () => {
   const [selectedYear, setelectedYear] = useState(2020);
   const ChoroplethMapRef = useRef();
   const wrapperRef = useRef();
+  const svgRef = useRef();
   const dimensions = useResizeObserver(wrapperRef);
   const legendContainerRef = useRef();
   const legendDimensions = useResizeObserver(legendContainerRef);
@@ -88,7 +89,8 @@ const ChoroplethMap = () => {
     "https://gist.githubusercontent.com/arslanastral/124e7f33c35c465d813e206f94c4a4c0/raw/748955149d56d4b7bef1d876da6f3280b2b6c798/co2-emissions.csv";
 
   useEffect(() => {
-    const svg = d3.select(ChoroplethMapRef.current);
+    const svg = d3.select(svgRef.current);
+    const svgGroup = d3.select(ChoroplethMapRef.current);
     const LegendSvg = d3.select(legend.current);
     const { width, height } =
       dimensions || wrapperRef.current.getBoundingClientRect();
@@ -134,7 +136,11 @@ const ChoroplethMap = () => {
         .tickSize(15)
         .tickValues(colorThreshold.domain());
 
-      LegendSvg.select(".x-axis").call(xAxis);
+      LegendSvg.select(".x-axis")
+        .attr("font-family", "Inter")
+        .attr("font-size", "0.7rem")
+        .attr("color", "#534b4b")
+        .call(xAxis);
 
       LegendSvg.select(".domain").remove();
 
@@ -146,7 +152,7 @@ const ChoroplethMap = () => {
         .attr("height", 10)
         .attr("fill", (d) => colorThreshold(d));
 
-      svg
+      svgGroup
         .selectAll(".country")
         .data(countries.features)
         .join("path")
@@ -172,6 +178,7 @@ const ChoroplethMap = () => {
             .style("left", event.pageX + "px")
             .style("top", event.pageY + "px");
         })
+        .on("click", clicked)
         .on("mouseout", function () {
           div.transition().duration(500).style("display", "none");
           d3.select(this).style("stroke", "#c5c5c5");
@@ -184,7 +191,7 @@ const ChoroplethMap = () => {
         .attr("d", (feature) => mapPathGenerator(feature))
         .attr("stroke", "#c5c5c5");
 
-      svg
+      svgGroup
         .selectAll(".dot")
         .data(countries.features)
         .join("circle")
@@ -192,6 +199,7 @@ const ChoroplethMap = () => {
         .attr("opacity", 0.8)
         .attr("fill", "grey")
         .attr("stroke", "#333")
+        .on("click", clicked)
         .on("mouseover", function (event, feature) {
           let countryName = feature.properties.name;
           d3.select(this).style("stroke", "blue");
@@ -231,23 +239,57 @@ const ChoroplethMap = () => {
       .style("left", "0px")
       .style("top", "0px");
 
+    const zoom = d3
+      .zoom()
+      .scaleExtent([1, 8])
+      .translateExtent([
+        [0, 0],
+        [width + 10, height],
+      ])
+      .on("zoom", zoomed);
+
     function zoomed(event) {
       let transform = event.transform;
-      svg
-        .selectAll(".country")
+      svgGroup
         .attr("transform", transform)
         .attr("stroke", "#c5c5c5")
         .attr("stroke-width", 0.8 / transform.k);
-      svg
-        .selectAll(".dot")
+      svgGroup
         .attr("transform", transform)
         .attr("stroke", "#333")
         .attr("stroke-width", 1 / transform.k);
     }
 
-    const zoom = d3.zoom().scaleExtent([1, 10]).on("zoom", zoomed);
+    function clicked(event, d) {
+      const [[x0, y0], [x1, y1]] = mapPathGenerator.bounds(d);
+      event.stopPropagation();
+      svg
+        .transition()
+        .duration(350)
+        .call(
+          zoom.transform,
+          d3.zoomIdentity
+            .translate(width / 2, height / 2)
+            .scale(
+              Math.min(8, 0.9 / Math.max((x1 - x0) / width, (y1 - y0) / height))
+            )
+            .translate(-(x0 + x1) / 2, -(y0 + y1) / 2),
+          d3.pointer(event, svg.node())
+        );
+    }
 
-    svg.call(zoom);
+    function reset() {
+      svg
+        .transition()
+        .duration(350)
+        .call(
+          zoom.transform,
+          d3.zoomIdentity,
+          d3.zoomTransform(svg.node()).invert([width / 2, height / 2])
+        );
+    }
+
+    svg.on("click", reset).call(zoom);
 
     return () => {
       div.remove();
@@ -276,7 +318,9 @@ const ChoroplethMap = () => {
       </LegendContainer>
 
       <ChoroplethMapContainer ref={wrapperRef}>
-        <ChoroplethMapSvg ref={ChoroplethMapRef}></ChoroplethMapSvg>
+        <ChoroplethMapSvg ref={svgRef}>
+          <g ref={ChoroplethMapRef} />
+        </ChoroplethMapSvg>
       </ChoroplethMapContainer>
       <Slider
         style={{ width: "50%", height: "3px", margin: "2rem 0 1rem 0" }}
