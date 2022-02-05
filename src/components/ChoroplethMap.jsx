@@ -24,8 +24,8 @@ const Title = styled.h1`
   animation-duration: 1s;
   font-family: "Playfair Display", serif;
   margin: 1rem 2rem 0 2rem;
-  line-height: 45px;
-  font-size: clamp(2rem, 4vw, 2.8rem);
+  line-height: 35px;
+  font-size: clamp(2rem, 5vw, 2.8rem);
 `;
 
 const Subtitle = styled.p`
@@ -65,7 +65,6 @@ const ChoroplethMapSvg = styled.svg`
   height: 100%;
   animation: fadeIn;
   animation-duration: 1s;
-  overflow: visible !important;
 `;
 
 const YearTitle = styled.span`
@@ -80,6 +79,7 @@ const YearTitle = styled.span`
 const ChoroplethMap = () => {
   const [data, setdata] = useState([]);
   const [selectedYear, setelectedYear] = useState(2020);
+  const [selectedCountry, setselectedCountry] = useState(null);
   const ChoroplethMapRef = useRef();
   const wrapperRef = useRef();
   const dimensions = useResizeObserver(wrapperRef);
@@ -96,7 +96,9 @@ const ChoroplethMap = () => {
       dimensions || wrapperRef.current.getBoundingClientRect();
 
     const countries = feature(world, world.objects.countries);
-    const mapProjection = d3.geoMercator().fitSize([width, height], countries);
+    const mapProjection = d3
+      .geoMercator()
+      .fitSize([width, height], selectedCountry || countries);
     const mapPathGenerator = d3.geoPath().projection(mapProjection);
 
     if (data.length) {
@@ -153,6 +155,15 @@ const ChoroplethMap = () => {
         .data(countries.features)
         .join("path")
         .attr("class", "country")
+        .on("click", (e, feature) => {
+          if (selectedCountry === null) {
+            setselectedCountry(selectedCountry === feature ? null : feature);
+          } else {
+            setselectedCountry(
+              selectedCountry.id === feature.id ? null : feature
+            );
+          }
+        })
         .on("mouseover", function (event, feature) {
           let countryName = feature.properties.name;
           d3.select(this).style("stroke", "blue").attr("stroke-width", "1");
@@ -237,11 +248,10 @@ const ChoroplethMap = () => {
       .style("opacity", 0)
       .style("left", "0px")
       .style("top", "0px");
-
     return () => {
       div.remove();
     };
-  }, [data, dimensions, selectedYear, legendDimensions]);
+  }, [data, selectedCountry, dimensions, selectedYear, legendDimensions]);
 
   useEffect(() => {
     d3.csv(dataURL, d3.autoType).then((data) => setdata(data));
