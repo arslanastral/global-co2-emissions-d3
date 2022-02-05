@@ -14,3 +14,20 @@ div.tooltip {
   border-radius: 8px;
   pointer-events: none;
 }
+
+div.indicator {
+  position: absolute;
+  /* text-align: left;
+  font-family: Inter;
+  line-height: 22px;
+  font-size: 1.1rem;
+  padding: 0.3rem 0.6rem; */
+  background: blue;
+  box-shadow: 0 2px 25px rgba(255, 0, 130, 0.5);
+  width: 20px;
+  height: 20px;
+  /* color: black; */
+  border: 1px solid yellow;
+  border-radius: 8px;
+  pointer-events: none;
+}

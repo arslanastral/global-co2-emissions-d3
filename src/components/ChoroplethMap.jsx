@@ -40,9 +40,9 @@ const Subtitle = styled.p`
 `;
 
 const LegendContainer = styled.div`
-  width: clamp(100px, 30vw, 300px);
+  width: clamp(100px, 70vw, 300px);
   height: 10px;
-  margin: -1rem 0 2rem -6rem;
+  margin: -1rem 0 2rem 0rem;
 `;
 
 const LegendSvg = styled.svg`
@@ -73,9 +73,6 @@ const YearTitle = styled.span`
   animation: fadeIn;
   animation-duration: 1s;
   font-family: Inter;
-  text-align: center;
-  /* margin: 2rem 2rem 3rem 2rem; */
-  /* font-size: clamp(1rem, 4vw, 1.5rem) */
   font-size: 2rem;
   letter-spacing: -1px;
 `;
@@ -98,9 +95,6 @@ const ChoroplethMap = () => {
     const { width, height } =
       dimensions || wrapperRef.current.getBoundingClientRect();
 
-    // const legendWidth =
-    //   legendDimensions.width ||
-    //   legendContainerRef.current.getBoundingClientRect();
     const countries = feature(world, world.objects.countries);
     const mapProjection = d3.geoMercator().fitSize([width, height], countries);
     const mapPathGenerator = d3.geoPath().projection(mapProjection);
@@ -132,8 +126,6 @@ const ChoroplethMap = () => {
           "   #990000",
         ]);
 
-      console.log(colorThreshold.domain());
-
       const xScale = d3
         .scaleLinear()
         .domain([0, maxProp])
@@ -144,9 +136,7 @@ const ChoroplethMap = () => {
         .tickSize(15)
         .tickValues(colorThreshold.domain());
 
-      LegendSvg.select(".x-axis")
-        // .style("transform", `translate(0,0)`)
-        .call(xAxis);
+      LegendSvg.select(".x-axis").call(xAxis);
 
       LegendSvg.select(".domain").remove();
 
@@ -163,7 +153,6 @@ const ChoroplethMap = () => {
         .data(countries.features)
         .join("path")
         .attr("class", "country")
-        .attr("d", (feature) => mapPathGenerator(feature))
         .on("mouseover", function (event, feature) {
           let countryName = feature.properties.name;
           d3.select(this).style("stroke", "blue").attr("stroke-width", "1");
@@ -195,6 +184,7 @@ const ChoroplethMap = () => {
             ? colorThreshold(dataset[feature.properties.name])
             : "#bdacac"
         )
+        .attr("d", (feature) => mapPathGenerator(feature))
         .attr("stroke", "grey")
         .attr("stroke-width", "0.4");
 
@@ -205,7 +195,7 @@ const ChoroplethMap = () => {
         .attr("class", "dot")
         .attr("opacity", 0.8)
         .attr("fill", "grey")
-        .attr("stroke", "black")
+        .attr("stroke", "#333")
         .attr("stroke-width", "0.8")
 
         .attr("cx", (d) => mapProjection(d3.geoCentroid(d))[0])
@@ -248,16 +238,8 @@ const ChoroplethMap = () => {
       .style("left", "0px")
       .style("top", "0px");
 
-    // let legentText = LegendSvg.append("text")
-    //   .attr("fill", "#000")
-    //   .attr("font-weight", "normal")
-    //   .attr("text-anchor", "start")
-    //   .attr("y", -6)
-    //   .text("Emissions in MtC02");
-
     return () => {
       div.remove();
-      // legentText.remove();
     };
   }, [data, dimensions, selectedYear, legendDimensions]);
 
