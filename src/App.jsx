@@ -4,7 +4,6 @@ import ChoroplethMap from "./components/ChoroplethMap";
 
 const AppContainer = styled.div`
   background-repeat: repeat;
-  /* background-color: black; */
   display: flex;
   justify-content: center;
   flex-direction: column;

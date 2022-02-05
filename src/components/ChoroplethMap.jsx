@@ -6,14 +6,11 @@ import styled from "styled-components";
 import Slider from "react-input-slider";
 
 const Wrapper = styled.div`
-  /* background: white; */
   width: clamp(320px, 90vw, 1200px);
-  /* box-shadow: 0 2px 25px rgba(255, 0, 130, 0.5); */
   height: 900px;
   border-radius: 20px;
   display: flex;
   justify-content: center;
-  /* flex-wrap: wrap; */
   flex-direction: column;
   align-items: center;
 `;
@@ -22,8 +19,8 @@ const Title = styled.h1`
   color: black;
   animation: fadeInDown;
   animation-duration: 1s;
-  font-family: "Playfair Display", serif;
-  margin: 1rem 2rem 0 2rem;
+  font-family: Inter;
+  margin: 1rem 1rem 0 2rem;
   line-height: 35px;
   font-size: clamp(2rem, 5vw, 2.8rem);
 `;
@@ -65,6 +62,8 @@ const ChoroplethMapSvg = styled.svg`
   height: 100%;
   animation: fadeIn;
   animation-duration: 1s;
+  background-color: #8ab4f8;
+  border-radius: 12px;
 `;
 
 const YearTitle = styled.span`
@@ -79,7 +78,6 @@ const YearTitle = styled.span`
 const ChoroplethMap = () => {
   const [data, setdata] = useState([]);
   const [selectedYear, setelectedYear] = useState(2020);
-  const [selectedCountry, setselectedCountry] = useState(null);
   const ChoroplethMapRef = useRef();
   const wrapperRef = useRef();
   const dimensions = useResizeObserver(wrapperRef);
@@ -96,9 +94,7 @@ const ChoroplethMap = () => {
       dimensions || wrapperRef.current.getBoundingClientRect();
 
     const countries = feature(world, world.objects.countries);
-    const mapProjection = d3
-      .geoMercator()
-      .fitSize([width, height], selectedCountry || countries);
+    const mapProjection = d3.geoMercator().fitSize([width, height], countries);
     const mapPathGenerator = d3.geoPath().projection(mapProjection);
 
     if (data.length) {
@@ -112,7 +108,7 @@ const ChoroplethMap = () => {
       const sqrtScale = d3
         .scaleSqrt()
         .domain(d3.extent(datasetValues))
-        .range([1, width / 20]);
+        .range([1, width / 25]);
 
       const colorThreshold = d3
         .scaleThreshold()
@@ -155,18 +151,8 @@ const ChoroplethMap = () => {
         .data(countries.features)
         .join("path")
         .attr("class", "country")
-        .on("click", (e, feature) => {
-          if (selectedCountry === null) {
-            setselectedCountry(selectedCountry === feature ? null : feature);
-          } else {
-            setselectedCountry(
-              selectedCountry.id === feature.id ? null : feature
-            );
-          }
-        })
         .on("mouseover", function (event, feature) {
           let countryName = feature.properties.name;
-          d3.select(this).style("stroke", "blue").attr("stroke-width", "1");
           div.transition().duration(200).style("opacity", 1);
           div
             .html(
@@ -186,18 +172,15 @@ const ChoroplethMap = () => {
             .style("top", event.pageY + "px");
         })
         .on("mouseout", function () {
-          d3.select(this).style("stroke", "grey").attr("stroke-width", "0.4");
           div.transition().duration(500).style("opacity", 0);
         })
-        .transition()
         .attr("fill", (feature) =>
           dataset[feature.properties.name]
             ? colorThreshold(dataset[feature.properties.name])
             : "#bdacac"
         )
         .attr("d", (feature) => mapPathGenerator(feature))
-        .attr("stroke", "grey")
-        .attr("stroke-width", "0.4");
+        .attr("stroke", "#c5c5c5");
 
       svg
         .selectAll(".dot")
@@ -207,14 +190,8 @@ const ChoroplethMap = () => {
         .attr("opacity", 0.8)
         .attr("fill", "grey")
         .attr("stroke", "#333")
-        .attr("stroke-width", "0.8")
-
-        .attr("cx", (d) => mapProjection(d3.geoCentroid(d))[0])
-        .attr("cy", (d) => mapProjection(d3.geoCentroid(d))[1])
         .on("mouseover", function (event, feature) {
           let countryName = feature.properties.name;
-
-          d3.select(this).style("stroke", "blue").attr("stroke-width", "1");
           div.transition().duration(200).style("opacity", 1);
           div
             .html(
@@ -234,9 +211,10 @@ const ChoroplethMap = () => {
             .style("top", event.pageY + "px");
         })
         .on("mouseout", function () {
-          d3.select(this).style("stroke", "black").attr("stroke-width", "0.8");
           div.transition().duration(500).style("opacity", 0);
         })
+        .attr("cy", (d) => mapProjection(d3.geoCentroid(d))[1])
+        .attr("cx", (d) => mapProjection(d3.geoCentroid(d))[0])
         .transition()
         .attr("r", (feature) => sqrtScale(dataset[feature.properties.name]));
     }
@@ -248,10 +226,42 @@ const ChoroplethMap = () => {
       .style("opacity", 0)
       .style("left", "0px")
       .style("top", "0px");
+
+    function zoomed(event) {
+      let transform = event.transform;
+      svg
+        .selectAll(".country")
+        .attr("transform", transform)
+        .attr("stroke", "#c5c5c5")
+        .attr("stroke-width", 0.4 / transform.k)
+        .on("mouseover", function () {
+          d3.select(this).style("stroke", "blue");
+          console.log(transform);
+        })
+        .on("mouseout", function () {
+          d3.select(this).style("stroke", "#c5c5c5");
+        });
+      svg
+        .selectAll(".dot")
+        .attr("transform", transform)
+        .attr("stroke", "#333")
+        .attr("stroke-width", 0.8 / transform.k)
+        .on("mouseover", function () {
+          d3.select(this).style("stroke", "blue");
+        })
+        .on("mouseout", function () {
+          d3.select(this).style("stroke", "#333");
+        });
+    }
+
+    const zoom = d3.zoom().scaleExtent([1, 10]).on("zoom", zoomed);
+
+    svg.call(zoom);
+
     return () => {
       div.remove();
     };
-  }, [data, selectedCountry, dimensions, selectedYear, legendDimensions]);
+  }, [data, dimensions, selectedYear, legendDimensions]);
 
   useEffect(() => {
     d3.csv(dataURL, d3.autoType).then((data) => setdata(data));
