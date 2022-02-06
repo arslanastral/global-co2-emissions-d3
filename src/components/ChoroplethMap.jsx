@@ -289,6 +289,10 @@ const ChoroplethMap = () => {
         );
     }
 
+    if (width <= 800) {
+      svg.call(zoom.transform, d3.zoomIdentity.translate(-200, -650).scale(3)); //handles initial zoom on some devices
+    }
+
     svg.on("click", reset).call(zoom);
 
     return () => {
