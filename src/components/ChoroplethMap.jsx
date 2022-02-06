@@ -20,26 +20,31 @@ const Title = styled.h1`
   animation: fadeInDown;
   animation-duration: 1s;
   font-family: Inter;
-  margin: 1rem 1rem 0 2rem;
+  margin: 1rem 1rem 2rem 2rem;
   line-height: 35px;
   font-size: clamp(2rem, 5vw, 2.8rem);
 `;
 
-const Subtitle = styled.p`
-  color: #525257;
+const Citation = styled.span`
+  color: #929294;
   animation: fadeIn;
   animation-duration: 1s;
   font-family: Inter;
   text-align: center;
-  /* margin: 2rem 2rem 3rem 2rem; */
+  margin: 1rem 0rem -1rem 0rem;
   font-size: clamp(1rem, 4vw, 1.5rem)
   letter-spacing: -1px;
+`;
+
+const CitationLink = styled.a`
+  text-decoration: none;
+  color: #374bff;
 `;
 
 const LegendContainer = styled.div`
   width: clamp(100px, 70vw, 300px);
   height: 10px;
-  margin: -1rem 0 2rem 0rem;
+  margin: 0rem 0 2rem -1rem;
 `;
 
 const LegendSvg = styled.svg`
@@ -62,7 +67,7 @@ const ChoroplethMapSvg = styled.svg`
   height: 100%;
   animation: fadeIn;
   animation-duration: 1s;
-  background-color: #8ab4f8;
+  background-color: #3784ff;
   border-radius: 12px;
 `;
 
@@ -71,7 +76,8 @@ const YearTitle = styled.span`
   animation: fadeIn;
   animation-duration: 1s;
   font-family: Inter;
-  font-size: 2rem;
+  font-weight: bold;
+  font-size: 2.5rem;
   letter-spacing: -1px;
 `;
 
@@ -116,14 +122,14 @@ const ChoroplethMap = () => {
         .scaleThreshold()
         .domain(d3.range(minProp, maxProp, maxProp / 7))
         .range([
-          "#fff7ec",
-          " #fee8c8",
-          " #fdd49e",
-          "#fdbb84",
-          "#fc8d59",
-          "#ef6548",
-          "#d7301f",
-          "   #990000",
+          "#ffffe5",
+          "#fff7bc",
+          "#fee391",
+          "#fec44f",
+          "#fe9929",
+          "#ec7014",
+          "#cc4c02",
+          "#8c2d04",
         ]);
 
       const xScale = d3
@@ -313,8 +319,6 @@ const ChoroplethMap = () => {
       <Title>
         Land CO<sub>2</sub> Emissions in MtCO<sub>2</sub>
       </Title>
-      <Subtitle></Subtitle>
-
       <LegendContainer ref={legendContainerRef}>
         <LegendSvg ref={legend}>
           <g className="x-axis" />
@@ -334,6 +338,16 @@ const ChoroplethMap = () => {
         onChange={({ x }) => setelectedYear(x)}
       />
       <YearTitle>{selectedYear}</YearTitle>
+      <Citation>
+        Data Source:{" "}
+        <CitationLink
+          target="_blank"
+          rel="noopener noreferrer"
+          href="http://www.globalcarbonatlas.org"
+        >
+          Global Carbon Atlas
+        </CitationLink>
+      </Citation>
     </Wrapper>
   );
 };
